@@ -1,161 +1,241 @@
-var trex, trex_running, edges;
-var groundImage;
-var solo
-var solo2
-var nuvemImg
-var c1
-var estadodojogo = "jogar"
-var grupodenuvem,grupodecacto
-var gameover,gameoverImg
-var checkpoint
-var die
-var jump
-var pontuacao=0
-var v =5
-var trexcolide
-var reset, resetImg
+var path,mainCyclist;
+var player1,player2,player3;
+var pathImg,mainRacerImg1,mainRacerImg2;
+
+var oppPink1Img,oppPink2Img;
+var oppYellow1Img,oppYellow2Img;
+var oppRed1Img,oppRed2Img;
+var gameOverImg,cycleBell;
+
+var pinkCG, yellowCG,redCG; 
+
+var END =0;
+var PLAY =1;
+var gameState = PLAY;
+
+var distance=0;
+var gameOver, restart;
 
 function preload(){
-  trex_running = loadAnimation("trex1.png","trex3.png","trex4.png");
-  trexcolide = loadAnimation("trex_collided.png")
-  groundImage = loadImage("ground2.png")
-  nuvemImg= loadImage("cloud.png")
-  c1=loadImage("obstacle1.png")
-  c2=loadImage("obstacle2.png")
-  c3=loadImage("obstacle3.png")
-  c4=loadImage("obstacle4.png")
-  c5=loadImage("obstacle5.png")
-  c6=loadImage("obstacle6.png")
-  checkpoint=loadSound("checkPoint.mp3")
-  die=loadSound("die.mp3")         
-  jump=loadSound("jump.mp3")
-  gameoverImg=loadImage("gameOver.png")
-  resetImg=loadImage("restart.png")
+  pathImg = loadImage("Road.png");
+  mainRacerImg1 = loadAnimation("mainPlayer1.png","mainPlayer2.png");
+  mainRacerImg2= loadAnimation("mainPlayer3.png");
+  
+  oppPink1Img = loadAnimation("opponent1.png","opponent2.png");
+  oppPink2Img = loadAnimation("opponent3.png");
+  
+  oppYellow1Img = loadAnimation("opponent4.png","opponent5.png");
+  oppYellow2Img = loadAnimation("opponent6.png");
+  
+  oppRed1Img = loadAnimation("opponent7.png","opponent8.png");
+  oppRed2Img = loadAnimation("opponent9.png");
+  
+  cycleBell = loadSound("bell.mp3");
+  gameOverImg = loadImage("gameOver.png");
 }
 
 function setup(){
-  createCanvas(600,200);
   
-  //criando o trex
-  trex = createSprite(50,160,20,50);
-  trex.addAnimation("running", trex_running);
-  trex.addAnimation("colide",trexcolide);
-  edges = createEdgeSprites();
-  solo= createSprite(300,190,600,20)
-  solo.addImage ("cacto" ,groundImage);
-  solo2 = createSprite(300,200,600,10)
-  solo2.visible=false
-  grupodenuvem=new Group ()
-  grupodecacto=new Group ()
-  gameover = createSprite(300,80,20,20)
-  gameover.addImage("gameover",gameoverImg)
-  gameover.visible=false
-  reset = createSprite(300,110,20,20)
-  reset.addImage("reset",resetImg)
-  reset.scale=0.5
-  reset.visible=false
-  //adicione dimensão e posição ao trex
-  trex.scale = 0.5;
-  trex.x = 50
-  frameRate(80)
+createCanvas(1200,300);
+// Moving background
+path=createSprite(100,150);
+path.addImage(pathImg);
+path.velocityX = -5;
+
+//creating boy running
+mainCyclist  = createSprite(70,150);
+mainCyclist.addAnimation("SahilRunning",mainRacerImg1);
+mainCyclist.scale=0.07;
+  
+//set collider for mainCyclist
+
+//mainCyclist.setCollission("rectangle",0,0,40,40);
+mainCyclist.setCollider("rectangle",0,0,40,40);
+//mainCyclist.setCollission("rectangle",0,0,40,40,50);
+//mainCyclist.setCollider("rectangle",0,0,40,40,50);
+
+  
+gameOver = createSprite(650,150);
+gameOver.addImage(gameOverImg);
+gameOver.scale = 0.8;
+gameOver.visible = false;  
+  
+pinkCG = new Group();
+yellowCG = new Group();
+redCG = new Group();
+  
 }
 
-
-function draw(){
-  //definir a cor do plano de fundo 
-  background("white");
-  trex.collide(solo2);
-  text("Pontuação: "+pontuacao,500,13)
-
-  if(estadodojogo==="jogar"){
-    trex.velocityY = trex.velocityY + 0.5;
-    solo.velocityX = -v
-    if (solo.x <0) {
-      solo.x=solo.width/2
-
-    
-    }
-    pontuacao=pontuacao+Math.round(frameCount/280)
-    if (pontuacao%100===0&&pontuacao>0){
-      checkpoint.play()
-      v++
-    }
-    //pular quando tecla de espaço for pressionada
-    if(keyDown("space")&&trex.y>170){
-      trex.velocityY = -10;
-      jump.play()
-    }
-    //impedir que o trex caia
-    
-    
-    gerarNuvem();
-    gerarcacto()
-    if(trex.isTouching(grupodecacto)){
-      estadodojogo="encerrar"
-     die.play()
-    }
-  } else if(estadodojogo==="encerrar"){
-    solo.velocityX = 0
-    trex.velocityY = 0
-    grupodecacto.setVelocityXEach (0)
-    grupodenuvem.setVelocityXEach (0)
-    grupodecacto.setLifetimeEach (-1)
-    grupodenuvem.setLifetimeEach (-1)
-    gameover.visible=true
-    reset.visible=true  
-    trex.changeAnimation("colide",trexcolide);
-    if(mousePressedOver(reset)){
-    botao()  
-    }
-  }
+function draw() {
+  background(0);
+  
   drawSprites();
-}
-
-function gerarNuvem(){
-    if(frameCount %60===0) {
-      var nuvem=createSprite(610,50,40,10)
-      nuvem.velocityX=-4
-      nuvem.lifetime=180
-      nuvem.y=Math.round(random(10,60))
-      nuvem.addImage("nuvem",nuvemImg)
-      grupodenuvem.add(nuvem)
+  textSize(20);
+  fill(255);
+  text("Distance: "+ distance,900,30);
+  
+  if(gameState===PLAY){
+    
+   distance = distance + Math.round(getFrameRate()/50);
+   path.velocityX = -(6 + 2*distance/150);
+  
+   mainCyclist.y = World.mouseY;
+  
+   edges= createEdgeSprites();
+   mainCyclist .collide(edges);
+  
+  //code to reset the background
+  if(path.x < 0 ){
+    path.x = width/2;
+  }
+  
+    //code to play cycle bell sound
+  if(keyDown("space")) {
+    cycleBell.play();
+  }
+  
+  //creating continous opponent players
+  var select_oppPlayer = Math.round(random(1,3));
+  
+  if (World.frameCount % 150 == 0) {
+    if (select_oppPlayer == 1) {
+      pinkCyclists();
+    } else if (select_oppPlayer == 2) {
+      yellowCyclists();
+    } else {
+      redCyclists();
     }
- 
+  }
+  
+   if(pinkCG.isTouching(mainCyclist)){
+     gameState = END;
+     player1.velocityY = 0;
+     player1.addAnimation("opponentPlayer1",oppPink2Img);
+    }
+    
+    if(yellowCG.isTouching(mainCyclist)){
+      gameState = END;
+      player2.velocityY = 0;
+      player2.addAnimation("opponentPlayer2",oppYellow2Img);
+    }
+    
+    if(redCG.isTouching(mainCyclist)){
+      gameState = END;
+      player3.velocityY = 0;
+      player3.addAnimation("opponentPlayer3",oppRed2Img);
+    }
+    
+}else if (gameState === END) {
+    gameOver.visible = true;
+  
+    textSize(20);
+    fill(255);
+    text("Press Up Arrow to Restart the game!", 500,200);
+  
+    path.velocityX = 0;
+    mainCyclist.velocityY = 0;
+    mainCyclist.addAnimation("SahilRunning",mainRacerImg2);
+  
+    pinkCG.setVelocityXEach(0);
+    pinkCG.setLifetimeEach(-1);
+  
+    yellowCG.setVelocityXEach(0);
+    yellowCG.setLifetimeEach(-1);
+  
+    redCG.setVelocityXEach(0);
+    redCG.setLifetimeEach(-1);
+    
+    // if(keyDown("UP_ARROW")) {
+    //   reset;
+    // }
+
+    // if(key("UP_ARROW")) {
+    //   reset();
+    // }
+
+    // if(keyDown()) {
+    //   reset();
+    // }
+
+     if(keyDown("UP_ARROW")) {
+       reset();
+     }
 }
-function gerarcacto(){
-  if(frameCount %60===0) {
-    var cacto=createSprite(610,176,40,10)
-    cacto.velocityX=-v
-    cacto.scale=0.4
-    cacto.lifetime=180
-    var rend=Math.round(random(1,6))
-     switch(rend){
-    case 1: cacto.addImage("cacto",c1)
-  break
-  case 2: cacto.addImage("cacto",c2)
-  break
-  case 3: cacto.addImage("cacto",c3)
-  break
-  case 4: cacto.addImage("cacto",c4)
-  break
-  case 5: cacto.addImage("cacto",c5)
-  break
-  case 6: cacto.addImage("cacto",c6)
-  break
- 
-  }
-  grupodecacto.add(cacto)
-  }
 }
 
-function botao ()
-{ 
-  estadodojogo ="jogar"
-  grupodecacto.destroyEach ()
-  grupodenuvem.destroyEach ()
-  pontuacao=0  
-  frameCount=0
-  trex.changeAnimation("running",trex_running);
-  gameover.visible=false
-  reset.visible=false
+function pinkCyclists(){
+        player1 =createSprite(1100,Math.round(random(50, 250)));
+        player1.scale =0.06;
+        player1.velocityX = -(6 + 2*distance/150);
+        player1.addAnimation("opponentPlayer1",oppPink1Img);
+        player1.setLifetime=170;
+        pinkCG.add(player1);
 }
+
+function yellowCyclists(){
+        player2 =createSprite(1100,Math.round(random(50, 250)));
+        player2.scale =0.06;
+        player2.velocityX = -(6 + 2*distance/150);
+        player2.addAnimation("opponentPlayer2",oppYellow1Img);
+        player2.setLifetime=170;
+        yellowCG.add(player2);
+}
+
+function redCyclists(){
+        player3 =createSprite(1100,Math.round(random(50, 250)));
+        player3.scale =0.06;
+        player3.velocityX = -(6 + 2*distance/150);
+        player3.addAnimation("opponentPlayer3",oppRed1Img);
+        player3.setLifetime=170;
+        redCG.add(player3);
+}
+
+//function reset{
+//  gameState = END;
+//  gameOver.visible = false;
+//  mainCyclist.addAnimation("SahilRunning",mainRacerImg1);
+  
+//  pinkCG.destroyEach();
+//  yellowCG.destroyEach();
+//  redCG.destroyEach();
+  
+//  distance = 0;
+// }
+
+//function reset {
+//  gameState = PLAY;
+//  gameOver.visible = true;
+//  mainCyclist.addAnimation("SahilRunning",mainRacerImg1);
+  
+//  pinkCG.destroy();
+//  yellowCG.destroy();
+//  redCG.destroy();
+  
+ // distance = 0;
+// }
+
+function reset(){
+  gameState = PLAY;
+  gameOver.visible = false;
+  mainCyclist.addAnimation("SahilRunning",mainRacerImg1);
+  
+  pinkCG.destroyEach();
+  yellowCG.destroyEach();
+  redCG.destroyEach();
+  
+  distance = 0;
+ }
+
+//function reset(){
+//  gameState = END;
+//  gameOver.visible = true;
+//  mainCyclist.addAnimation("SahilRunning",mainRacerImg1);
+  
+//  pinkCG.destroyEach();
+//  yellowCG.destroyEach();
+//  redCG.destroyEach();
+  
+//  distance = 50;
+// }
+
+
